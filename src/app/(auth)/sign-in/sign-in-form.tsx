@@ -23,11 +23,13 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { signIn } from "@/lib/auth-client";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 import { z } from "zod";
 
 const signInSchema = z.object({
@@ -45,6 +47,8 @@ export function SignInForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  const redirect = searchParams.get("redirect");
+
   const form = useForm<SignInValues>({
     resolver: zodResolver(signInSchema),
     defaultValues: {
@@ -55,11 +59,40 @@ export function SignInForm() {
   });
 
   async function onSubmit({ email, password, rememberMe }: SignInValues) {
-    // TODO: Handle sign in
+    setLoading(true);
+    setError(null);
+    const { error } = await signIn.email({
+      email, 
+      password,
+      rememberMe,
+    })
+
+    setLoading(false);
+    if (error){
+      setError(error.message || "Something went wrong");
+    }else{
+      toast.success("Successfully signed in");
+      router.push(redirect ?? "/dashboard");
+    }
+
   }
 
   async function handleSocialSignIn(provider: "google" | "github") {
-    // TODO: Handle social sign in
+    setLoading(true);
+    setError(null);
+
+    const { error } = await signIn.social({
+      provider,
+      callbackURL: redirect ?? "/dashboard"
+    })
+
+    if (error){
+      setError(error.message || "Something went wrong");
+      setLoading(false);
+    }else{
+      toast.success("Successfully signed in");
+      router.push("/dashboard");
+    }
   }
 
   return (

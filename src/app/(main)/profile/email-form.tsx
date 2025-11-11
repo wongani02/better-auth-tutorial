@@ -11,9 +11,11 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { changeEmail } from "@/lib/auth-client";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 import z from "zod";
 
 export const updateEmailSchema = z.object({
@@ -38,7 +40,19 @@ export function EmailForm({ currentEmail }: EmailFormProps) {
   });
 
   async function onSubmit(values: UpdateEmailValues) {
-    // TODO: Handle email update
+    setError(null);
+    setStatus(null);
+
+    const { error } = await changeEmail({
+      newEmail: values.newEmail,
+      callbackURL: "/email-verified",
+    })
+
+    if (error){
+      setError(error.message || "Something went wrong");
+    }else{
+      toast.success("Profile updated successfully");
+    }
   }
 
   const loading = form.formState.isSubmitting;

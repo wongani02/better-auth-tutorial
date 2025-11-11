@@ -8,17 +8,24 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { UserAvatar } from "@/components/user-avatar";
+import { getServerSession } from "@/lib/get-session";
 import { format } from "date-fns";
 import { CalendarDaysIcon, MailIcon, ShieldIcon, UserIcon } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { unauthorized } from "next/navigation";
 
 export const metadata: Metadata = {
   title: "Dashboard",
 };
 
-export default function DashboardPage() {
-  // TODO: Check for authentication
+export default async function DashboardPage() {
+    const session = await getServerSession();
+    const user = session?.user;
+
+    if(!user){
+      unauthorized();
+    }
 
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-12">
@@ -30,22 +37,28 @@ export default function DashboardPage() {
           </p>
         </div>
         {/* TODO: Use actual user data */}
-        <EmailVerificationAlert />
-        <ProfileInformation />
+        { !user.emailVerified && <EmailVerificationAlert/>}
+        <ProfileInformation 
+          name={user.name || "Unnamed User"}
+          email={user.email || "No email provided"}
+          image={user.image || undefined}
+          role={user.role || "user"}
+          createdAt={user.createdAt || new Date()}
+        />
       </div>
     </main>
   );
 }
 
-function ProfileInformation() {
-  // TODO: Render real user info
-  const user = {
-    name: "John Doe",
-    email: "john.doe@example.com",
-    image: undefined,
-    role: "admin",
-    createdAt: new Date(),
-  };
+interface ProfileInformationProp {
+  name: string;
+  email: string;
+  image: string | undefined;
+  role: string;
+  createdAt: Date;
+}
+
+function ProfileInformation({name, email, image, role, createdAt}: ProfileInformationProp) {
 
   return (
     <Card>
@@ -62,22 +75,22 @@ function ProfileInformation() {
         <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
           <div className="flex flex-col items-center gap-3">
             <UserAvatar
-              name={user.name}
-              image={user.image}
+              name={name}
+              image={image}
               className="size-32 sm:size-24"
             />
-            {user.role && (
+            {role && (
               <Badge>
                 <ShieldIcon className="size-3" />
-                {user.role}
+                {role}
               </Badge>
             )}
           </div>
 
           <div className="flex-1 space-y-4">
             <div>
-              <h3 className="text-2xl font-semibold">{user.name}</h3>
-              <p className="text-muted-foreground">{user.email}</p>
+              <h3 className="text-2xl font-semibold">{name}</h3>
+              <p className="text-muted-foreground">{email}</p>
             </div>
 
             <div className="space-y-2">
@@ -86,7 +99,7 @@ function ProfileInformation() {
                 Member Since
               </div>
               <p className="font-medium">
-                {format(user.createdAt, "MMMM d, yyyy")}
+                {format(createdAt, "MMMM d, yyyy")}
               </p>
             </div>
           </div>

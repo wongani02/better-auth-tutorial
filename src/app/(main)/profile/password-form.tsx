@@ -11,10 +11,13 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { changePassword } from "@/lib/auth-client";
 import { passwordSchema } from "@/lib/validation";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 import { z } from "zod";
 
 const updatePasswordSchema = z.object({
@@ -29,6 +32,7 @@ type UpdatePasswordValues = z.infer<typeof updatePasswordSchema>;
 export function PasswordForm() {
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   const form = useForm<UpdatePasswordValues>({
     resolver: zodResolver(updatePasswordSchema),
@@ -42,7 +46,22 @@ export function PasswordForm() {
     currentPassword,
     newPassword,
   }: UpdatePasswordValues) {
-    // TODO: Handle password update
+    setError(null);
+    setStatus(null);
+
+    const { error } = await changePassword({
+      currentPassword, 
+      newPassword,
+      revokeOtherSessions: true,
+    })
+
+    if (error){
+      setError(error.message || "Something went wrong");
+    }else{
+      toast.success("Profile updated successfully");
+      form.reset();
+      router.refresh();
+    }
   }
 
   const loading = form.formState.isSubmitting;

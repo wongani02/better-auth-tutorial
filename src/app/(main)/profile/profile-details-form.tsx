@@ -13,11 +13,14 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { UserAvatar } from "@/components/user-avatar";
+import { updateUser } from "@/lib/auth-client";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { User } from "better-auth";
 import { XIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 import { z } from "zod";
 
 const updateProfileSchema = z.object({
@@ -25,19 +28,18 @@ const updateProfileSchema = z.object({
   image: z.string().optional().nullable(),
 });
 
+interface ProfileDetailsFormProps {
+  user: User;
+}
+
 export type UpdateProfileValues = z.infer<typeof updateProfileSchema>;
 
-export function ProfileDetailsForm() {
+export function ProfileDetailsForm({user}: ProfileDetailsFormProps) {
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const router = useRouter();
-
-  // TODO: Render real user info
-  const user = {
-    name: "John Doe",
-    image: undefined,
-  };
+;
 
   const form = useForm<UpdateProfileValues>({
     resolver: zodResolver(updateProfileSchema),
@@ -48,7 +50,17 @@ export function ProfileDetailsForm() {
   });
 
   async function onSubmit({ name, image }: UpdateProfileValues) {
-    // TODO: Handle profile update
+    setError(null);
+    setStatus(null);
+
+    const { error } = await updateUser({name, image})
+
+    if (error){
+      setError(error.message || "Something went wrong");
+    }else{
+      toast.success("Profile updated successfully");
+      router.refresh();
+    }
   }
 
   function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
